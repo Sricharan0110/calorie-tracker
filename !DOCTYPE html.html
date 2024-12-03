@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calorie Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+        }
+        label, input, textarea, button {
+            display: block;
+            margin: 10px 0;
+            width: 100%;
+        }
+        input, textarea {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calorie Tracker</h1>
+    <form id="calorieForm">
+        <label for="inputField">Enter Details:</label>
+        <textarea id="inputField" placeholder="Example: Cycling 15km, Paneer Curry, 2 Pulka"></textarea>
+        <button type="button" onclick="processInput()">Submit</button>
+    </form>
+
+    <h2>Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Type</th>
+                <th>Calories</th>
+            </tr>
+        </thead>
+        <tbody id="calorieTable">
+            <!-- Entries will appear here -->
+        </tbody>
+    </table>
+
+    <h3>Totals</h3>
+    <p>Calories Burned: <span id="burned">0</span> kcal</p>
+    <p>Calories Consumed: <span id="consumed">0</span> kcal</p>
+    <p>Net Calories: <span id="netCalories">0</span> kcal</p>
+
+    <script>
+        // Calorie database
+        const calorieDatabase = {
+            "cycling 15km": { type: "burned", calories: 300 },
+            "paneer curry": { type: "consumed", calories: 430 },
+            "2 pulka": { type: "consumed", calories: 240 },
+            "walking 5km": { type: "burned", calories: 280 },
+            "milk with horlicks": { type: "consumed", calories: 240 },
+            "50g seeds": { type: "consumed", calories: 300 }
+        };
+
+        function processInput() {
+            const input = document.getElementById("inputField").value.toLowerCase();
+            const entries = input.split(",");
+            let totalBurned = 0;
+            let totalConsumed = 0;
+
+            const tableBody = document.getElementById("calorieTable");
+            tableBody.innerHTML = ""; // Clear previous entries
+
+            entries.forEach(entry => {
+                const trimmedEntry = entry.trim();
+                if (calorieDatabase[trimmedEntry]) {
+                    const { type, calories } = calorieDatabase[trimmedEntry];
+
+                    // Update totals
+                    if (type === "burned") {
+                        totalBurned += calories;
+                    } else if (type === "consumed") {
+                        totalConsumed += calories;
+                    }
+
+                    // Add row to table
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td>${trimmedEntry}</td>
+                        <td>${type}</td>
+                        <td>${calories} kcal</td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+
+            // Update totals
+            document.getElementById("burned").textContent = totalBurned;
+            document.getElementById("consumed").textContent = totalConsumed;
+            document.getElementById("netCalories").textContent = totalConsumed - totalBurned;
+
+            // Send data to Google Apps Script
+            sendToGoogle(totalBurned, totalConsumed, totalConsumed - totalBurned, entries);
+        }
+
+        function sendToGoogle(burned, consumed, net, entries) {
+            const url = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL"; // Replace with your Apps Script Web App URL
+            const payload = {
+                burned,
+                consumed,
+                net,
+                entries
+            };
+
+            fetch(url, {
+                method: "POST",
+                body: JSON.stringify(payload),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }).then(response => response.json())
+              .then(data => console.log("Data sent to Google Docs:", data))
+              .catch(error => console.error("Error:", error));
+        }
+    </script>
+</body>
+</html>
